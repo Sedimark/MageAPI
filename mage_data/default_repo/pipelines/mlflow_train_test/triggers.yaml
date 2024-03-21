@@ -1,0 +1,12 @@
+triggers:
+- envs: []
+  last_enabled_at: 2024-02-07 10:37:28.329468+00:00
+  name: trigger train/pred
+  pipeline_uuid: mlflow_train_test
+  schedule_interval: null
+  schedule_type: api
+  settings: {}
+  sla: null
+  start_time: 2023-09-19 11:29:00+00:00
+  status: active
+  variables: null

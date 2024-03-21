@@ -1,0 +1,6 @@
+external/*
+*.pyc
+__pycache__
+*.egg-info/
+logs.log
+notebooks/logs.log

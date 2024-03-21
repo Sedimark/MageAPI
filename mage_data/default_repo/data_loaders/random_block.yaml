@@ -1,0 +1,17 @@
+connector_type: 'rabbitmq'
+connection_host: '62.72.21.79'
+connection_port: 5674
+queue_name: 'rpi'
+username: 'guest'
+password: 'guest'
+amqp_url_virtual_host: '%2f'
+
+
+
+##Uncomment this to set consume configuration 
+#configure_consume: True
+
+#auto_ack: False
+#exclusive: False
+#inactivity_timeout: 10.0
+

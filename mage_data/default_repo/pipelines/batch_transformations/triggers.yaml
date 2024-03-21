@@ -1,0 +1,12 @@
+triggers:
+- envs: []
+  last_enabled_at: 2024-02-07 10:37:28.314390+00:00
+  name: delicate sky
+  pipeline_uuid: batch_transformations
+  schedule_interval: null
+  schedule_type: api
+  settings: {}
+  sla: null
+  start_time: 2023-08-04 08:44:00+00:00
+  status: active
+  variables: null

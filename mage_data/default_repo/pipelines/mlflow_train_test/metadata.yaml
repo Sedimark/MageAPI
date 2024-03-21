@@ -1,0 +1,98 @@
+blocks:
+- all_upstream_blocks_executed: true
+  color: null
+  configuration:
+    file_path: null
+  downstream_blocks:
+  - train
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: broker_loader
+  retry_config: null
+  status: updated
+  timeout: null
+  type: data_loader
+  upstream_blocks: []
+  uuid: broker_loader
+- all_upstream_blocks_executed: false
+  color: null
+  configuration:
+    file_path: null
+  downstream_blocks:
+  - predict_data
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: train
+  retry_config: null
+  status: executed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - broker_loader
+  uuid: train
+- all_upstream_blocks_executed: false
+  color: null
+  configuration:
+    file_path: null
+  downstream_blocks:
+  - analyse_pred
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: predict_data
+  retry_config: null
+  status: failed
+  timeout: null
+  type: data_exporter
+  upstream_blocks:
+  - train
+  uuid: predict_data
+- all_upstream_blocks_executed: false
+  color: teal
+  configuration:
+    file_path: null
+  downstream_blocks: []
+  executor_config: null
+  executor_type: local_python
+  has_callback: false
+  language: python
+  name: analyse_pred
+  retry_config: null
+  status: executed
+  timeout: null
+  type: custom
+  upstream_blocks:
+  - predict_data
+  uuid: analyse_pred
+cache_block_output_in_memory: false
+callbacks: []
+concurrency_config: {}
+conditionals: []
+created_at: '2023-09-19 11:10:36.692226+00:00'
+data_integration: null
+description: pipeline that uses data from stellio broker and trains the model, saves
+  it to minio and then predicts data based on the saved model
+executor_config: {}
+executor_count: 1
+executor_type: null
+extensions: {}
+name: mlflow train_test
+notification_config: {}
+remote_variables_dir: null
+retry_config: {}
+run_pipeline_in_one_process: false
+settings:
+  triggers: null
+spark_config: {}
+tags:
+- train
+type: python
+updated_at: '2024-02-20 14:55:30'
+uuid: mlflow_train_test
+variables_dir: /home/src/mage_data/sedimark
+widgets: []

@@ -1,0 +1,10 @@
+config:
+  database: postgres
+  host: 62.72.21.79
+  password: KzKmJQA#io4pTCN
+  port: 5433
+  schema: public
+  username: postgres
+  replication_slot: null
+  publication_name: null
+source: postgresql
