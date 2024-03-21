@@ -7,7 +7,8 @@ The API can either be run standalone, or from kubernetes:
 - To run with python:
     - First run from the base directory: ```pip install -r requirements.txt```
     - After then run: ```python main.py```
-- To run from kubernetes:
+- To run from kubernetes: go to kubernetes directory and:
     - Use the mage-deployment.yaml file to run the pod with: ```kubectl add -f mage-deployment.yaml```
     - Use the mage-service.yaml file to run the: ```kubectl add -f mage-service.yaml```
-    - Lastly add the mage-secret.yaml file: ```kubectl add -f mage-secret.yaml```
+    - Also add the mage-secret.yaml file: ```kubectl add -f mage-secret.yaml```
+    - Lastly add ingress file for data routing: ```kubectl add -f mage-ingress.yaml``` 
