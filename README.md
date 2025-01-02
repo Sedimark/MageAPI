@@ -1,14 +1,29 @@
-# MageAPI
-This Project is an API written in Python with FastAPI, that acts as a wrapper over the API from Mage AI, to let someone interact and control the pipelines inside a Mage AI deployment.
+# Mage AI API
+![Docker Image](https://github.com/JarcauCristian/MageAPI/actions/workflows/docker_image.yml/badge.svg)
 
-# Running the API
-The API can either be run standalone, or from kubernetes:
+Mage AI API tries to automate most of the things that can be done in Mage AI through the power of code.
 
-- To run with python:
-    - First run from the base directory: ```pip install -r requirements.txt```
-    - After then run: ```python main.py```
-- To run from kubernetes: go to kubernetes directory and:
-    - Use the mage-deployment.yaml file to run the pod with: ```kubectl add -f mage-deployment.yaml```
-    - Use the mage-service.yaml file to run the: ```kubectl add -f mage-service.yaml```
-    - Also add the mage-secret.yaml file: ```kubectl add -f mage-secret.yaml```
-    - Lastly add ingress file for data routing: ```kubectl add -f mage-ingress.yaml``` 
+The API is split in three main categories:
+- Pipeline Interactions
+- Block Interactions
+- Kernel Interactions
+
+To run the API there are two possibilities:
+- Locally:
+  - Clone the repository: `git clone https://github.com/JarcauCristian/MageAPI.git`
+  - Install the requirements: `pip install -r requirements.txt`
+
+- Docker:
+  - Getting the official image with: `docker pull ghcr.io/jarcaucristian/mage-api:latest`
+    - Setting up the environment variables:
+      - **BASE_URL** -> The URL to the Mage AI deployment
+      - **EMAIL** -> The email of an account with admin role
+      - **PASSWORD** -> The password of an account with admin role
+      - **AUTH** -> Can have only two values **[true, false]** if it is false then EMAIL and PASSWORD shouldn't be provided
+      - **OLLAMA_URL** -> The URL for an OLLAMA instance
+    - Run the image: `docker run -p 8000:8000 -e BASE_URL=<> -e EMAIL=<> -e PASSWORD=<> -e API_KEY=<> ghcr.io/jarcaucristian/mage-api:latest`
+  - Build the image: `docker build -t mage_api .`
+      - Run the image: `docker run -p 8000:8000 -e BASE_URL=<> -e EMAIL=<> -e PASSWORD=<> -e API_KEY=<> ghcr.io/jarcaucristian/mage-api:latest`
+   
+Accessing the API swagger documentation at http://localhost:8000/mage/docs
+    

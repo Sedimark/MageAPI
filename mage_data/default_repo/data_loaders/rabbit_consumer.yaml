@@ -1,8 +1,0 @@
-connector_type: 'rabbitmq'
-connection_host: '62.72.21.79'
-connection_port: "5673"
-queue_name: 'default'
-username: 'guest'
-password: 'guest'
-amqp_url_virtual_host: '%2f'
-

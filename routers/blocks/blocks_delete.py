@@ -1,8 +1,8 @@
 import os
 import requests
-from fastapi import APIRouter
 from dependencies import Token
 from utils.models import DeleteBlock
+from fastapi import APIRouter, HTTPException
 from starlette.responses import JSONResponse
 
 router = APIRouter()
@@ -16,20 +16,16 @@ async def delete_block(block: DeleteBlock):
         token.update_token()
 
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
 
     if block.block_name == "" and block.pipeline_name == "":
-        return JSONResponse(status_code=400, content="Block should not be empty!")
+        raise HTTPException(status_code=400, detail="Block should not be empty!")
 
     response = requests.delete(f'{os.getenv("base_url")}/api/pipelines/{block.pipeline_name}/'
-                                          f'blocks/{block.block_name}?block_type={block.block_type}&'
-                                          f'api_key={os.getenv("API_KEY")}&force={block.force}')
+                               f'blocks/{block.block_name}?block_type={block.block_type}&'
+                               f'api_key={os.getenv("API_KEY")}&force={block.force}')
 
-    if response.status_code != 200:
-        return JSONResponse(status_code=500, content="Could not delete block!")
-
-    if response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content="Error occurred when deleting block!")
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=200, content="Block Deleted!")
-

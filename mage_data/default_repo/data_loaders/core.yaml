@@ -1,5 +1,0 @@
-connector_type: influxdb
-url: "https://energy.unitbv.ro"
-token: "WT-JPhEfmIHA05-znp1tT7ist0wKLg3TYheH8E49CQCQdRcWDTi4KSMGIWidHcvxeCBS_kdKbsSS8nhj6pDTqg=="
-org: "UnitBV"
-bucket: "test"

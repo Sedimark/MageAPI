@@ -1,9 +1,0 @@
-blocks:
-  broker_loader:
-  - description: The entity to be loader
-    layout: []
-    name: Entity ID
-    permissions: []
-    uuid: loader_intercation.yaml
-    variables: {}
-layout: []

@@ -4,10 +4,10 @@ import random
 import string
 import requests
 from datetime import datetime
-from fastapi import APIRouter
 from dependencies import Token
-from utils.models import Pipeline, Secret, Trigger, Variables
+from fastapi import APIRouter, HTTPException
 from starlette.responses import JSONResponse
+from utils.models import Pipeline, Secret, Trigger, Variables, Tag
 
 router = APIRouter()
 
@@ -19,10 +19,10 @@ async def pipeline_create(name: str, ptype: str):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
 
     if ptype not in ["python", "streaming"]:
-        return JSONResponse(status_code=400, content="Only python and streaming are required for type")
+        raise HTTPException(status_code=400, detail="Only python and streaming are required for type")
 
     url = f'{os.getenv("BASE_URL")}/api/pipelines'
 
@@ -42,26 +42,20 @@ async def pipeline_create(name: str, ptype: str):
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
 
-    if response.status_code != 200:
-        return JSONResponse(status_code=response.status_code, content="Something happened with the server!")
-
-    if response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content=response.json().get('message'))
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=201, content="Pipeline Created")
 
 
-@router.post("/mage/pipeline/create", tags=["PIPELINES POST"])
-async def pipeline_create(name: str, ptype: str):
+@router.post("/mage/pipeline/create/tag", tags=["PIPELINES POST"])
+async def pipeline_create_tag(tag: Tag):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
 
-    if ptype not in ["python", "streaming"]:
-        return JSONResponse(status_code=400, content="Only python and streaming are required for type")
-
-    url = f'{os.getenv("BASE_URL")}/api/pipelines'
+    url = f'{os.getenv("BASE_URL")}/api/pipelines/{tag.name}?update_content=true&api_key={os.getenv("API_KEY")}'
 
     headers = {
         'Content-Type': 'application/json',
@@ -69,23 +63,19 @@ async def pipeline_create(name: str, ptype: str):
         'X-API-KEY': os.getenv("API_KEY")
     }
 
-    data = {
+    body = {
+        "api_key": os.getenv("API_KEY"),
         "pipeline": {
-            "name": name,
-            "type": ptype,
-            "description": "not created"
+            "tags": [tag.tag]
         }
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response = requests.request("PUT", url, data=json.dumps(body), headers=headers)
 
-    if response.status_code != 200:
-        return JSONResponse(status_code=response.status_code, content="Something happened with the server!")
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
-    if response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content=response.json().get('message'))
-
-    return JSONResponse(status_code=201, content="Pipeline Created")
+    return JSONResponse(status_code=201, content="Tag created successfully!")
 
 
 @router.post("/mage/pipeline/create/trigger", tags=["PIPELINES POST"])
@@ -93,14 +83,14 @@ async def pipeline_create_trigger(trigger: Trigger):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
 
     if trigger.trigger_type not in ["time", "api"]:
-        return JSONResponse(status_code=400, content="Type can be only schedule and api!")
+        raise HTTPException(status_code=400, detail="Type can be only schedule and api!")
     
     if trigger.trigger_type == "time":
         if trigger.interval not in ["hourly", "daily", "monthly"]:
-            return JSONResponse(status_code=400, content="Interval can be only hourly, daily and monthly!")
+            raise HTTPException(status_code=400, detail="Interval can be only hourly, daily and monthly!")
 
     url = f'{os.getenv("BASE_URL")}/api/pipelines/{trigger.name}/pipeline_schedules?api_key={os.getenv("API_KEY")}'
     headers = {
@@ -108,7 +98,6 @@ async def pipeline_create_trigger(trigger: Trigger):
         "Content-Type": "application/json"
     }
 
-    payload = {}
     if trigger.trigger_type == "api":
         payload = json.dumps({
             "pipeline_schedule": {
@@ -131,12 +120,8 @@ async def pipeline_create_trigger(trigger: Trigger):
 
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    if response.status_code != 200:
-        return JSONResponse(status_code=response.status_code, content="Bad request!")
-    
-    if response.json().get("error") is not None:
-        print(response.json())
-        return JSONResponse(status_code=500, content="Error creating the triggers!")
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=200, content="Trigger created successfully!")
 
@@ -146,7 +131,7 @@ async def run_pipeline(pipe: Pipeline):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
 
     url = f"{os.getenv('BASE_URL')}/api/pipeline_schedules/{pipe.run_id}/api_trigger"
 
@@ -165,10 +150,10 @@ async def run_pipeline(pipe: Pipeline):
     for k, v in pipe.variables.items():
         body['pipeline_run']['variables'][k] = v
 
-    response = requests.post(url, headers=headers, data=json.dumps(body, indent=4))
+    response = requests.post(url, headers=headers, json=body)
 
     if response.status_code != 200 or response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content="Starting the pipeline didn't work!")
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=201, content="Pipeline Started Successfully!")
 
@@ -178,10 +163,10 @@ async def create_variables(variables: Variables):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
     
     if len(variables.variables.keys()) == 0:
-        return JSONResponse(status_code=400, content="Should be at least one variable!")
+        raise HTTPException(status_code=400, detail="Should be at least one variable!")
     
     error_counter = 0
     
@@ -211,7 +196,7 @@ async def create_variables(variables: Variables):
             error_counter += 1
 
     if error_counter > 0:
-        return JSONResponse(status_code=500, content=f"{error_counter}variables could not be created!")
+        raise HTTPException(status_code=500, detail=f"{error_counter} variables could not be created!")
 
     return JSONResponse(status_code=200, content="Variables added successfully!")
 
@@ -221,12 +206,14 @@ async def create_secret(secret: Secret):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
+        raise HTTPException(status_code=500, detail="Could not get the token!")
     
     url = f'{os.getenv("BASE_URL")}/api/secrets?api_key={os.getenv("API_KEY")}'
 
     headers = {
-        "Authorization": f"Bearer {token.token}"
+        "Authorization": f"Bearer {token.token}",
+        "Content-Type": "application/json",
+        "X-API-KEY": os.getenv("API_KEY")
     }
 
     body = {
@@ -237,9 +224,9 @@ async def create_secret(secret: Secret):
         "api_key": os.getenv("API_KEY")
     }
 
-    response = requests.request("POST", url, headers=headers, data=body)
+    response = requests.request("POST", url, headers=headers, json=body)
 
     if response.status_code != 200 or response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content="Could not create the secret!")
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
     
     return JSONResponse(status_code=200, content="Secret created successfully!")

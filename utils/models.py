@@ -1,13 +1,17 @@
 import datetime
-from typing import Any, Dict, List, Optional
-
 from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 
 
 class Pipeline(BaseModel):
     variables: Dict[str, Any]
     run_id: int
     token: str
+
+
+class Tag(BaseModel):
+    name: str
+    tag: str
 
 
 class Description(BaseModel):
@@ -49,3 +53,30 @@ class Variables(BaseModel):
 class Secret(BaseModel):
     name: str
     value: str
+
+
+class UpdateTrigger(BaseModel):
+    trigger_id: int
+    status: str
+    pipeline_uuid: str
+
+
+class Query(BaseModel):
+    block_type: str
+    description: str
+
+
+class Server(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
+    base_url: Optional[str] = None
+
+
+class Rename(BaseModel):
+    current_name: str
+    new_name: str
+
+
+class Validate(BaseModel):
+    block_type: str
+    content: str

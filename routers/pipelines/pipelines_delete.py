@@ -1,9 +1,10 @@
 import os
 import requests
-from fastapi import APIRouter
+import threading
+from queue import Queue
 from dependencies import Token
+from fastapi import APIRouter, HTTPException
 from starlette.responses import JSONResponse
-
 
 router = APIRouter()
 
@@ -15,8 +16,8 @@ async def delete_pipeline(name: str):
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
-        return JSONResponse(status_code=500, content="Could not get the token!")
-    
+        raise HTTPException(status_code=500, detail="Could not get the token!")
+
     url = f'{os.getenv("BASE_URL")}/api/pipelines/{name}/pipeline_schedules?api_key={os.getenv("API_KEY")}'
     headers = {
         "Authorization": f"Bearer {token.token}",
@@ -26,9 +27,7 @@ async def delete_pipeline(name: str):
     response = requests.request("GET", url, headers=headers)
 
     if response.status_code != 200 or response.json().get("error") is not None:
-        return JSONResponse(status_code=response.status_code, content="Could not get triggers!")
-    
-    schedule_id = response.json()["pipeline_schedules"][0]["id"]
+        raise HTTPException(status_code=response.status_code, detail=response.json().get("error")["exception"])
 
     headers = {
         "Content-Type": "application/json",
@@ -36,21 +35,42 @@ async def delete_pipeline(name: str):
         "X-API-KEY": os.getenv("API_KEY")
     }
 
-    response = requests.request("DELETE", f'{os.getenv("BASE_URL")}/api/pipeline_schedules/{schedule_id}?api_key={os.getenv("API_KEY")}', headers=headers)
+    error_queue = Queue()
 
-    if response.status_code != 200 or response.json().get("error") is not None:
-        return JSONResponse(status_code=500, conetent="Could not delete some information about the pipeline!")
+    def delete_schedule(schedule_id: int, head: dict[str, str]) -> None:
+        resp = requests.request(
+            "DELETE",
+            f'{os.getenv("BASE_URL")}/api/pipeline_schedules/{schedule_id}?api_key={os.getenv("API_KEY")}',
+            headers=head
+        )
+
+        if resp.status_code != 200 or resp.json().get("error") is not None:
+            error_queue.put(schedule_id)
+
+    pipeline_schedules = response.json()["pipeline_schedules"] if len(
+        response.json()["pipeline_schedules"]) > 0 else None
+
+    if pipeline_schedules is not None:
+        threads = []
+
+        for schedule in pipeline_schedules:
+            thread = threading.Thread(target=delete_schedule, args=(schedule["id"], headers))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        errors = error_queue.qsize()
+
+        if errors > 0:
+            raise HTTPException(status_code=500, detail=f"Could not delete all the triggers for pipeline {name}")
 
     url = f'{os.getenv("BASE_URL")}/api/pipelines/{name}'
 
     response = requests.request("DELETE", url, headers=headers)
 
-    if response.status_code != 200:
-        return JSONResponse(status_code=500, content="Something happened when deleting the pipeline!")
-
-    if response.json().get("error") is not None:
-        return JSONResponse(status_code=500, content="Something happened when deleting the pipeline!")
-    
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=200, content="Pipeline deleted successfully!")
-
