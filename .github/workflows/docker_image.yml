@@ -1,0 +1,32 @@
+name: Create Package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted 
+    permissions:
+      packages: write
+      contents: read
+      
+    steps:
+      - name: Checkout repo
+      - uses: actions/checkout@v4
+
+      - name: Kaniko build & push
+        uses: aevea/action-kaniko@master
+        with:
+          image: mage-api
+          cache: "true"
+          tag: development
+          path: .
+          debug: true
+          registry: ghcr.io
+          password: ${{ secrets.GITHUB_TOKEN }}
