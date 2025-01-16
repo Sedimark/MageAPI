@@ -1,11 +1,12 @@
 name: Create Package
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - "**"
-      - "!main"
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-and-push:
@@ -15,7 +16,7 @@ jobs:
       
     steps:
       - name: Checkout repo
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Kaniko build & push
         uses: aevea/action-kaniko@master
