@@ -62,8 +62,7 @@ class UpdateTrigger(BaseModel):
 
 
 class Query(BaseModel):
-    block_type: str
-    description: str
+    question: str
 
 
 class Server(BaseModel):
@@ -80,3 +79,16 @@ class Rename(BaseModel):
 class Validate(BaseModel):
     block_type: str
     content: str
+
+
+class FileCreate(BaseModel):
+    type: str
+    name: str
+    path: str
+    overwrite: Optional[bool] = False
+    content: Optional[str] = None
+
+
+class FileDelete(BaseModel):
+    type: str
+    name: str
