@@ -11,6 +11,29 @@ router = APIRouter()
 token = Token()
 
 
+@router.delete("/mage/pipeline/trigger/delete/{trigger_id}", tags=["PIPELINES DELETE"])
+async def delete_pipeline_trigger(trigger_id: str):
+    if token.check_token_expired():
+        token.update_token()
+    if token.token == "":
+        raise HTTPException(status_code=500, detail="Could not get the token!")
+
+
+    url = f'{os.getenv("BASE_URL")}/api/pipeline_schedules/{trigger_id}?api_key={os.getenv("API_KEY")}'
+    headers = {
+        "Authorization": f"Bearer {token.token}",
+        "Content-Type": "application/json",
+        "X-API-KEY": os.getenv("API_KEY")
+    }
+
+    response = requests.request("DELETE", url, headers=headers)
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=response.status_code, detail=response.json().get("error"))
+
+    return JSONResponse(status_code=200, content="Trigger deleted successfully!")
+   
+
 @router.delete("/mage/pipeline/delete", tags=["PIPELINES DELETE"])
 async def delete_pipeline(name: str):
     if token.check_token_expired():
