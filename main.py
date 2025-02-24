@@ -164,6 +164,10 @@ if __name__ == '__main__':
         print("OLLAMA_URL env variable is required!")
         exit(1)
 
+    if os.getenv('OLLAMA_MODEL') is None:
+        print("OLLAMA_MODEL env variable is required!")
+        exit(1)
+
     os.environ["API_KEY"] = "zkWlN0PkIKSN0C11CfUHUj84OT5XOJ6tDZ6bDRO2"
 
     uvicorn.run(app, host="0.0.0.0", ws_ping_timeout=1000.0)

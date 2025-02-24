@@ -20,7 +20,7 @@ from rag.data import get_retriever
 
 retriever = get_retriever()
  
-llm = ChatOllama(model="llama3.1:70b", base_url=os.getenv("OLLAMA_URL"), temperature=0)
+llm = ChatOllama(model=os.getenv("OLLAMA_MODEL"), base_url=os.getenv("OLLAMA_URL"), temperature=0)
 
 # --- Grade Documents ---
 structured_llm_grader = llm.with_structured_output(GradeDocuments)

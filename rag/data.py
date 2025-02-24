@@ -55,7 +55,7 @@ def split_chunks(paths: list[dict[str, Any]]) -> Any:
 
 def get_retriever():
 
-    embed = OllamaEmbeddings(model="llama3.1:70b", base_url=os.getenv("OLLAMA_URL"))
+    embed = OllamaEmbeddings(model=os.getenv("OLLAMA_MODEL"), base_url=os.getenv("OLLAMA_URL"))
 
     if not Path("db").exists():
         doc_paths = [
