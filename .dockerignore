@@ -4,4 +4,3 @@ __pycache__
 .env
 kubernetes
 db
-mage_to_cwl
