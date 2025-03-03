@@ -49,7 +49,7 @@ async def pipeline_create(name: str, ptype: str):
     return JSONResponse(status_code=201, content="Pipeline Created")
 
 
-@router.post("/mage/pipeline/create/tag", tags=["PIPELINES POST"])
+@router.post("/mage/pipeline/create/tags", tags=["PIPELINES POST"])
 async def pipeline_create_tag(tag: Tag):
     if token.check_token_expired():
         token.update_token()
@@ -67,7 +67,7 @@ async def pipeline_create_tag(tag: Tag):
     body = {
         "api_key": os.getenv("API_KEY"),
         "pipeline": {
-            "tags": [tag.tag]
+            "tags": tag.tags
         }
     }
 
@@ -76,7 +76,7 @@ async def pipeline_create_tag(tag: Tag):
     if response.status_code != 200 or response.json().get("error") is not None:
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
-    return JSONResponse(status_code=201, content="Tag created successfully!")
+    return JSONResponse(status_code=201, content="Tags created successfully!")
 
 
 @router.post("/mage/pipeline/create/trigger", tags=["PIPELINES POST"])

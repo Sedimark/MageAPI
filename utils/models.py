@@ -11,7 +11,7 @@ class Pipeline(BaseModel):
 
 class Tag(BaseModel):
     name: str
-    tag: str
+    tags: List[str]
 
 
 class Description(BaseModel):
