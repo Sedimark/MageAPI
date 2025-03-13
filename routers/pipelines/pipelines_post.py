@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import httpx
 import random
@@ -8,7 +9,7 @@ from datetime import datetime
 from dependencies import Token
 from fastapi import APIRouter, HTTPException, UploadFile
 from starlette.responses import JSONResponse
-from utils.models import Pipeline, Secret, Trigger, Variables, Tag
+from utils.models import Pipeline, Secret, Trigger, Variables, Tag, Template
 
 router = APIRouter()
 
@@ -48,6 +49,40 @@ async def pipeline_create(name: str, ptype: str):
 
     return JSONResponse(status_code=201, content="Pipeline Created")
 
+
+@router.post("/mage/pipeline/create/template", tags=["PIPELINES POST"])
+async def pipeline_create_template(template: Template):
+    if token.check_token_expired():
+        token.update_token()
+    if token.token == "":
+        raise HTTPException(status_code=500, detail="Could not get the token!")
+
+    pattern = re.compile(r'^[a-z ]+$')
+
+    if not pattern.fullmatch(template.pipeline_name):
+        raise HTTPException(status_code=500, detail="Pipeline name can only contain lowercase letters and spaces!")
+
+    url = f'{os.getenv("BASE_URL")}/api/pipelines?api_key={os.getenv("API_KEY")}'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token.token}',
+    }
+
+    data = {
+        "api_key": os.getenv("API_KEY"),
+        "pipeline": {
+            "custom_template_uuid": template.template_uuid,
+            "name": template.pipeline_name,
+        }
+    }
+
+    response = requests.request("POST", url, headers=headers, json=data)
+
+    print(response.json().get("error"))
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
+
+    return JSONResponse(status_code=201, content=f"Pipeline Created From Template {template.template_uuid.capitalize()}")
 
 @router.post("/mage/pipeline/create/tags", tags=["PIPELINES POST"])
 async def pipeline_create_tag(tag: Tag):

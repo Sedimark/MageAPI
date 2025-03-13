@@ -92,3 +92,8 @@ class FileCreate(BaseModel):
 class FileDelete(BaseModel):
     type: str
     name: str
+
+
+class Template(BaseModel):
+    pipeline_name: str
+    template_uuid: str

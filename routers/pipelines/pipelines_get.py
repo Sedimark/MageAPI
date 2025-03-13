@@ -20,6 +20,32 @@ router = APIRouter()
 token = Token()
 
 
+@router.get("/mage/pipeline/templates", tags=["PIPELINES GET"])
+async def pipeline_templates():
+    if token.check_token_expired():
+        token.update_token()
+    if token.token == "":
+        raise HTTPException(status_code=500, detail="Could not get the token!")
+
+    url = f'{os.getenv("BASE_URL")}/api/custom_templates?object_type=pipelines&api_key={os.getenv("API_KEY")}'
+    headers = {
+        "Authorization": f"Bearer {token.token}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
+
+    returns = []
+
+    for template in response.json().get("custom_templates", []):
+        returns.append(template["template_uuid"])
+
+    return JSONResponse(returns)
+    
+
 @router.get("/mage/pipeline/triggers", tags=["PIPELINES GET"])
 async def pipeline_triggers(name: str):
     if token.check_token_expired():
@@ -372,7 +398,7 @@ async def description(name: str):
     return JSONResponse(status_code=200, content=response.json()["pipeline"]["description"])
 
 
-@router.get("/mage/pipeline/templates", tags=["PIPELINES GET"])
+@router.get("/mage/pipeline/block/templates", tags=["PIPELINES GET"])
 async def templates(pipeline_type: str):
     if token.check_token_expired():
         token.update_token()
