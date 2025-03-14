@@ -64,6 +64,9 @@ async def pipeline_triggers(name: str):
     if response.status_code != 200 or response.json().get("error") is not None:
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
+    if not response.json().get("pipeline_schedules"):
+          return JSONResponse(status_code=200, content={})
+    
     returns = {
         "id": response.json()["pipeline_schedules"][0]["id"],
         "token": response.json()["pipeline_schedules"][0]["token"]
