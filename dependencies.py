@@ -19,19 +19,19 @@ class Token:
             self.expires = 0.0
             return
 
-        url = os.getenv("BASE_URL") + "/api/sessions"
+        url = os.getenv("BASE_URL", "") + "/api/sessions"
         headers = {
             "Content-Type": "application/json",
             "X-API-KEY": os.getenv("API_KEY")
         }
         data = {
             "session": {
-                "email": os.getenv("EMAIL").strip().replace("\n", ""),
-                "password": os.getenv("PASSWORD").strip().replace("\n", "")
+                "email": os.getenv("EMAIL", "").strip().replace("\n", ""),
+                "password": os.getenv("PASSWORD", "").strip().replace("\n", "")
             }
         }
 
-        response = requests.post(url, data=json.dumps(data), headers=headers)
+        response = requests.post(url, data=json.dumps(data), headers=headers, timeout=10)
 
         token = ""
         expires = 0.0
@@ -45,19 +45,19 @@ class Token:
         self.expires = expires
 
     def update_token(self) -> None:
-        url = os.getenv("BASE_URL") + "/api/sessions"
+        url = os.getenv("BASE_URL", "") + "/api/sessions"
         headers = {
             "Content-Type": "application/json",
             "X-API-KEY": os.getenv("API_KEY")
         }
         data = {
             "session": {
-                "email": os.getenv("EMAIL").strip().replace("\n", ""),
-                "password": os.getenv("PASSWORD").strip().replace("\n", "")
+                "email": os.getenv("EMAIL", "").strip().replace("\n", ""),
+                "password": os.getenv("PASSWORD", "").strip().replace("\n", "")
             }
         }
 
-        response = requests.post(url, data=json.dumps(data), headers=headers)
+        response = requests.post(url, data=json.dumps(data), headers=headers, timeout=10)
         token = ""
         expires = 0.0
         if response.status_code == 200:
