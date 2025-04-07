@@ -170,4 +170,4 @@ if __name__ == '__main__':
 
     os.environ["API_KEY"] = "zkWlN0PkIKSN0C11CfUHUj84OT5XOJ6tDZ6bDRO2"
 
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("MAGE_API_PORT", 8000)), ws_ping_timeout=1000.0)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("MAGE_API_PORT", 8085)), ws_ping_timeout=1000.0)
