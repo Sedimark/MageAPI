@@ -101,3 +101,4 @@ class Template(BaseModel):
 class FederatedTemplate(BaseModel):
     framework: str
     url: str
+    token: str
