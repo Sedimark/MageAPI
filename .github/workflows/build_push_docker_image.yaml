@@ -31,7 +31,7 @@ jobs:
       - name: Kaniko build & push
         uses: aevea/action-kaniko@master
         with:
-          image: sedimark-mage
+          image: mage-api
           cache: "false"
           tag: ${{ env.IMAGE_TAG }}
           path: .
