@@ -1,4 +1,5 @@
 import os
+import io
 import re
 import json
 import httpx
@@ -9,7 +10,8 @@ from datetime import datetime
 from dependencies import Token
 from fastapi import APIRouter, HTTPException, UploadFile
 from starlette.responses import JSONResponse
-from utils.models import Pipeline, Secret, Trigger, Variables, Tag, Template
+from utils.models import Pipeline, Secret, Trigger, Variables, Tag, Template, FederatedTemplate
+from utils.name_generator import NameGenerator
 
 router = APIRouter()
 
@@ -83,6 +85,151 @@ async def pipeline_create_template(template: Template):
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     return JSONResponse(status_code=201, content=f"Pipeline Created From Template {template.template_uuid.capitalize()}")
+
+
+@router.post("/mage/pipeline/create/federated_learning", tags=["PIPELINES POST"])
+async def pipeline_create_for_federated_learning(template: FederatedTemplate):
+    """
+     Tasks:
+      1. Generate new pipeline of type
+      2. Generate file for the FDML framework and add the url + store it
+      3. 
+
+    """
+    if token.check_token_expired():
+        token.update_token()
+    if token.token == "":
+        raise HTTPException(status_code=500, detail="Could not get the token!")
+
+    if template.framework not in ["fleviden","shamrock"]:
+        raise HTTPException(status_code=400, detail="Framework should be of type fleviden or shamrock!")
+
+    if len(template.url) == 0:
+        raise HTTPException(status_code=400, detail="The URL must not be empty!")
+
+    new_pipeline_name = NameGenerator.generate(include_color=True)
+    
+    # create pipeline with random name
+    
+    url = f'{os.getenv("BASE_URL")}/api/pipelines'
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token.token}',
+        'X-API-KEY': os.getenv("API_KEY")
+    }
+
+    data = {
+        "pipeline": {
+            "name": new_pipeline_name,
+            "type": "streaming",
+            "description": "not created"
+        }
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
+
+    # create config files for that pipeline
+    url = f'{os.getenv("BASE_URL")}/api/folders?api_key={os.getenv("API_KEY")}'
+
+    body = {
+        "api_key": os.getenv("API_KEY"),
+        "folder": {
+            "name": new_pipeline_name,
+            "overwrite": True,
+            "path": "configs"
+        }
+    }
+
+    response = requests.request("POST", url, json=body, headers=headers)
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=f"Error creating the folder {content.name}!")
+
+    # aici e chestia cu pipeline-ul adica ce nume are va fii pus aici
+    headers = {
+            "Authorization": f"Bearer {token.token}",
+            "accept": "application/json",
+        }
+
+    url = f"{os.getenv('BASE_URL')}/api/files?api_key={os.getenv('API_KEY')}"
+    
+    if template.framework == "shamrock":
+        content = f"""node:
+        port: 8182
+        node_id: server
+        dataset:
+        builtin_dataset: mnist
+        n_splits: 1
+        split_index: 0
+        node_id: server
+        n_workers_torch: 0
+        topology:
+        topology_name: CentralTopology
+        local_epochs: 10
+        max_iter: 15
+        log_file: metrics.txt
+        model:
+        optimizer: Adam
+        lr: 0.0001
+        batch_size: 512
+        loss: BinaryCrossentropy
+        metrics:
+            - accuracy_score
+        model: simple_cnn
+        model_path: /home/src/default_repo/configs/pipeline_shamrock_test_01/model_files/keras.keras
+        seed: 12645
+        framework: keras
+        log_file: /home/src/default_repo/configs/pipeline_shamrock_test_01/results/server.txt
+        stop_condition:
+        condition: fed_server
+        max_aggr: 1000
+        max_time: 3000
+        metric_name: accuracy_score
+        metric_min: 0.7
+        server_url:{template.url}
+        """
+    elif template.framework == "fleviden":
+            content = """# Environment Variables
+    SERVER: ~
+    ID: ~
+
+    # Configuration Parameters
+    EPOCHS: ~
+    ROUNDS: ~
+    BATCH_SIZE: ~
+    FEATURES: ~
+    TARGETS: ~
+    PD_ARGS: ~
+    MODEL_PATH: ~
+    DATA_PATH: ~
+    DEBUG: ~
+    VERBOSITY: ~"""
+        
+    buffer = io.BytesIO(content.encode('utf-8'))
+
+    overwrite = "true" 
+    files = {
+        "file": ("config.yaml", buffer, "text/yaml"),
+        "json_root_body": (
+            None,
+            '{"api_key":"%s","dir_path":"%s","pipeline_zip":false,"overwrite":%s}' % (os.getenv('API_KEY'), f"configs/{new_pipeline_name}", overwrite),
+        ), 
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, files=files)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Error encountered when importing the file!")
+    
+    
+    return JSONResponse(status_code=201, content="Files created successfully!")
+
+
 
 @router.post("/mage/pipeline/create/tags", tags=["PIPELINES POST"])
 async def pipeline_create_tag(tag: Tag):

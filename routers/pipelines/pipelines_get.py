@@ -21,7 +21,19 @@ token = Token()
 
 
 @router.get("/mage/pipeline/templates", tags=["PIPELINES GET"])
-async def pipeline_templates():
+async def pipeline_templates(template_type: str):
+    
+    if not template_type.strip():
+        raise HTTPException(status_code=400, detail="template_type cannot be empty.")
+    
+    template_type = template_type.lower()
+    allowed_template_types = {"data_models", "federated_learning"}
+    if template_type not in allowed_template_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid template_type '{template_type}'. Allowed values are: {allowed_template_types}"
+        )
+    
     if token.check_token_expired():
         token.update_token()
     if token.token == "":
@@ -39,9 +51,15 @@ async def pipeline_templates():
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     returns = []
-
     for template in response.json().get("custom_templates", []):
-        returns.append(template["template_uuid"])
+        try:
+            template_type_retrieved = json.loads(template["description"])["type"]
+        except ValueError as vl:
+            print(vl)
+            continue
+        if template_type_retrieved == template_type:
+            
+            returns.append({"name":template["template_uuid"], "details":template["description"]})
 
     return JSONResponse(returns)
     
