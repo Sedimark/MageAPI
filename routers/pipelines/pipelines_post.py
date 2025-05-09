@@ -107,6 +107,10 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
     if len(template.url) == 0:
         raise HTTPException(status_code=400, detail="The URL must not be empty!")
 
+    if len(template.token) == 0:
+        raise HTTPException(status_code=400, detail="The token must not be empty!")
+    
+    
     new_pipeline_name = NameGenerator.generate(include_color=True)
     
     # create pipeline with random name
