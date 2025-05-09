@@ -97,3 +97,7 @@ class FileDelete(BaseModel):
 class Template(BaseModel):
     pipeline_name: str
     template_uuid: str
+    
+class FederatedTemplate(BaseModel):
+    framework: str
+    url: str

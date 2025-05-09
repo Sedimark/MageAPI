@@ -51,11 +51,14 @@ async def pipeline_templates(template_type: str):
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
     returns = []
-
-    
     for template in response.json().get("custom_templates", []):
-        template_type_retrieved = json.loads(template["description"])["type"]
+        try:
+            template_type_retrieved = json.loads(template["description"])["type"]
+        except ValueError as vl:
+            print(vl)
+            continue
         if template_type_retrieved == template_type:
+            
             returns.append({"name":template["template_uuid"], "details":template["description"]})
 
     return JSONResponse(returns)
