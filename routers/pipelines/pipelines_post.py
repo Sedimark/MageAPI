@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from starlette.responses import JSONResponse
 from utils.models import Pipeline, Secret, Trigger, Variables, Tag, Template, FederatedTemplate
 from utils.name_generator import NameGenerator
+from routers.blocks.blocks_get import get_template
 
 router = APIRouter()
 
@@ -93,7 +94,7 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
      Tasks:
       1. Generate new pipeline of type
       2. Generate file for the FDML framework and add the url + store it
-      3. 
+      3. Add blocks to the pipeline and create it accordingly ( the blocks from shamrock to shamrock and from fleviden for fleviden)
 
     """
     if token.check_token_expired():
@@ -197,21 +198,47 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
         server_url:{template.url}
         """
     elif template.framework == "fleviden":
-            content = """# Environment Variables
-    SERVER: ~
-    ID: ~
+            content = content = """# Global configuration
+DEBUG: true
+VERBOSITY: 2
+ROUNDS: 10
 
-    # Configuration Parameters
-    EPOCHS: ~
-    ROUNDS: ~
-    BATCH_SIZE: ~
-    FEATURES: ~
-    TARGETS: ~
-    PD_ARGS: ~
-    MODEL_PATH: ~
-    DATA_PATH: ~
-    DEBUG: ~
-    VERBOSITY: ~"""
+# Client specific configuration
+client:
+  ID: "client1"
+  SERVER: "localhost:8080"
+  EPOCHS: 5
+  BATCH_SIZE: 32
+  MODEL_PATH: "/path/to/client/model.h5"
+  DATA_PATH: "/path/to/client/data.csv"
+  FEATURES:
+    - client_feature1
+    - client_feature2
+  TARGETS:
+    - client_target1
+  PD_ARGS:
+    sep: ','
+    header: 0
+    index_col: 0
+
+# Server specific configuration
+server:
+  ID: "server1"
+  CLIENTS:
+    - "client1"
+    - "client2"
+  MIN_CLIENTS: 2
+  MODEL_PATH: "/path/to/server/global_model.h5"
+  DATA_PATH: "/path/to/server/test_data.csv"
+  FEATURES:
+    - server_feature1
+    - server_feature2
+  TARGETS:
+    - server_target1
+  PD_ARGS:
+    sep: ','
+    header: 0
+    index_col: 0"""
         
     buffer = io.BytesIO(content.encode('utf-8'))
 
@@ -231,7 +258,115 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
         raise HTTPException(status_code=500, detail="Error encountered when importing the file!")
     
     
-    return JSONResponse(status_code=201, content="Files created successfully!")
+    """
+     The next steps here:
+        1. Fetch the code for the blocks that are composing Fleviden
+            - here you have to name them too and follow the payload structure
+        2. Link the blocks and save them
+        3. Save them to the endpoint
+    
+    """
+    
+    # 1. fetch the code for the 2 blocks
+    # se preia content si variables
+    # replace in cod acolo unde scrie <pipeline_name>
+    # le creezi apoi le linkuiesti si la final salvezi
+    
+    
+    importer_name = NameGenerator.generate(include_color=True)
+    transformer_name = NameGenerator.generate(include_color=True)
+    
+    
+    
+    block_importer_data = {}
+    block_transformer_data = {}
+    
+    if template.framework == "fleviden":
+        block_importer_data = get_template("fleviden_loader")
+        block_transformer_data = get_template("fleviden_transformer")
+    
+    elif template.framework == "shamrock":
+        block_importer_data = get_template("shamrock")
+        block_transformer_data = get_template("shamrock_transformer")
+
+
+    
+    # here comes the logic that actually saves the block
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Authorization": f"Bearer {token.token}",
+        "X-API-KEY": os.getenv("API_KEY")
+    }
+    
+    
+
+    # for the loader
+    # config holds the variables
+ 
+    
+    try:
+        config = json.loads(block_importer_data['variables'])
+    except json.JSONDecodeError:
+        print(f"Invalid JSON string: {block_importer_data['variables']}")
+        # Handle the error appropriately
+        config = {}  # or whatever default you want to use
+    
+
+    payload = {
+        "block": {
+            "name": importer_name,
+            "language": "python",
+            "type": "data_loader",
+            "content": block_importer_data['content'],
+            "configuration": config,
+            "downstream_blocks": [transformer_name],
+            "upstream_blocks": []
+        }, 
+        "api-key": os.getenv("API_KEY")
+    }
+
+    response = requests.request("POST", url=f'{os.getenv("BASE_URL")}/api/pipelines/{new_pipeline_name}/blocks?'
+                                            f'api_key={os.getenv("API_KEY")}', headers=headers, json=payload)
+
+
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
+    
+
+    
+    try:
+        config = json.loads(block_transformer_data['variables'])
+    except json.JSONDecodeError:
+        print(f"Invalid JSON string: {block_transformer_data['variables']}")
+        # Handle the error appropriately
+        config = {}  # or whatever default you want to use
+
+    payload = {
+        "block": {
+            "name": transformer_name,
+            "language": "python",
+            "type": "transformer",
+            "content": block_transformer_data['content'],
+            "configuration": config,
+            "downstream_blocks": [],
+            "upstream_blocks": [importer_name]
+        },
+        "api-key": os.getenv("API_KEY")
+    }
+
+    response = requests.request("POST", url=f'{os.getenv("BASE_URL")}/api/pipelines/{new_pipeline_name}/blocks?'
+                                            f'api_key={os.getenv("API_KEY")}', headers=headers, json=payload)
+
+
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
+    
+    
+    
+    return JSONResponse(status_code=201, content=f"Pipeline {new_pipeline_name} successfully created!")
 
 
 

@@ -37,6 +37,7 @@ async def block_create(block_name: Annotated[str, Form()],
         "X-API-KEY": os.getenv("API_KEY")
     }
 
+    
     config = json.loads(variables)
 
     payload = {
