@@ -102,3 +102,4 @@ class FederatedTemplate(BaseModel):
     framework: str
     url: str
     token: str
+    content: str

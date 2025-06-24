@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException, UploadFile
 from starlette.responses import JSONResponse
 from utils.models import Pipeline, Secret, Trigger, Variables, Tag, Template, FederatedTemplate
 from utils.name_generator import NameGenerator
+from utils.replace_pipeline_name import replace_pipeline_name
 from routers.blocks.blocks_get import get_template
 
 router = APIRouter()
@@ -111,6 +112,9 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
     if len(template.token) == 0:
         raise HTTPException(status_code=400, detail="The token must not be empty!")
     
+    if len(template.content) == 0:
+        raise HTTPException(status_code=400, detail="The config file can not be empty!")
+    
     
     new_pipeline_name = NameGenerator.generate(include_color=True)
     
@@ -152,7 +156,7 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
     response = requests.request("POST", url, json=body, headers=headers)
 
     if response.status_code != 200 or response.json().get("error") is not None:
-        raise HTTPException(status_code=500, detail=f"Error creating the folder {content.name}!")
+        raise HTTPException(status_code=500, detail=f"Error creating the folder {new_pipeline_name}!")
 
     # aici e chestia cu pipeline-ul adica ce nume are va fii pus aici
     headers = {
@@ -162,85 +166,9 @@ async def pipeline_create_for_federated_learning(template: FederatedTemplate):
 
     url = f"{os.getenv('BASE_URL')}/api/files?api_key={os.getenv('API_KEY')}"
     
-    if template.framework == "shamrock":
-        content = f"""node:
-        port: 8182
-        node_id: server
-        dataset:
-        builtin_dataset: mnist
-        n_splits: 1
-        split_index: 0
-        node_id: server
-        n_workers_torch: 0
-        topology:
-        topology_name: CentralTopology
-        local_epochs: 10
-        max_iter: 15
-        log_file: metrics.txt
-        model:
-        optimizer: Adam
-        lr: 0.0001
-        batch_size: 512
-        loss: BinaryCrossentropy
-        metrics:
-            - accuracy_score
-        model: simple_cnn
-        model_path: /home/src/default_repo/configs/pipeline_shamrock_test_01/model_files/keras.keras
-        seed: 12645
-        framework: keras
-        log_file: /home/src/default_repo/configs/pipeline_shamrock_test_01/results/server.txt
-        stop_condition:
-        condition: fed_server
-        max_aggr: 1000
-        max_time: 3000
-        metric_name: accuracy_score
-        metric_min: 0.7
-        server_url:{template.url}
-        """
-    elif template.framework == "fleviden":
-            content = content = """# Global configuration
-DEBUG: true
-VERBOSITY: 2
-ROUNDS: 10
-
-# Client specific configuration
-client:
-  ID: "client1"
-  SERVER: "localhost:8080"
-  EPOCHS: 5
-  BATCH_SIZE: 32
-  MODEL_PATH: "/path/to/client/model.h5"
-  DATA_PATH: "/path/to/client/data.csv"
-  FEATURES:
-    - client_feature1
-    - client_feature2
-  TARGETS:
-    - client_target1
-  PD_ARGS:
-    sep: ','
-    header: 0
-    index_col: 0
-
-# Server specific configuration
-server:
-  ID: "server1"
-  CLIENTS:
-    - "client1"
-    - "client2"
-  MIN_CLIENTS: 2
-  MODEL_PATH: "/path/to/server/global_model.h5"
-  DATA_PATH: "/path/to/server/test_data.csv"
-  FEATURES:
-    - server_feature1
-    - server_feature2
-  TARGETS:
-    - server_target1
-  PD_ARGS:
-    sep: ','
-    header: 0
-    index_col: 0"""
-        
-    buffer = io.BytesIO(content.encode('utf-8'))
+    
+    
+    buffer = io.BytesIO(template.content.encode('utf-8'))
 
     overwrite = "true" 
     files = {
@@ -282,15 +210,16 @@ server:
     block_transformer_data = {}
     
     if template.framework == "fleviden":
-        block_importer_data = get_template("fleviden_loader")
+        block_importer_data = get_template("fleviden_initializer")
         block_transformer_data = get_template("fleviden_transformer")
     
     elif template.framework == "shamrock":
         block_importer_data = get_template("shamrock")
         block_transformer_data = get_template("shamrock_transformer")
 
+    block_importer_data["content"] = replace_pipeline_name(block_importer_data["content"], new_pipeline_name)
+    block_transformer_data["content"] = replace_pipeline_name(block_transformer_data["content"], new_pipeline_name)
 
-    
     # here comes the logic that actually saves the block
     headers = {
         "Content-Type": "application/json",
@@ -364,6 +293,27 @@ server:
     if response.status_code != 200 or response.json().get("error") is not None:
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
     
+    # here you need to tag the pipeline such that it can be seen on the UI
+    
+    url = f'{os.getenv("BASE_URL")}/api/pipelines/{new_pipeline_name}?update_content=true&api_key={os.getenv("API_KEY")}'
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token.token}',
+        'X-API-KEY': os.getenv("API_KEY")
+    }
+
+    body = {
+        "api_key": os.getenv("API_KEY"),
+        "pipeline": {
+            "tags": ["streaming"]
+        }
+    }
+
+    response = requests.request("PUT", url, data=json.dumps(body), headers=headers)
+
+    if response.status_code != 200 or response.json().get("error") is not None:
+        raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
     
     
     return JSONResponse(status_code=201, content=f"Pipeline {new_pipeline_name} successfully created!")

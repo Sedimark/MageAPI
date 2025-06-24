@@ -39,7 +39,8 @@ def get_template(name: str):
 
     pattern = r"\([\w\s_-]+\) "
 
-    description = re.sub(pattern, "", description)
+    if description != None and len(description) != 0:
+        description = re.sub(pattern, "", description)
 
     returns = {
         "content": content,
