@@ -149,10 +149,10 @@ async def pipelines(tag: Optional[str] = None):
     if token.token == "":
         raise HTTPException(status_code=500, detail="Could not get the token!")
 
-    valid_tags = ["train", "data_preprocessing", "streaming"]
+    valid_tags = ["train", "data_preprocessing", "streaming" , "generic"]
 
     if tag and tag not in valid_tags:
-        raise HTTPException(status_code=400, detail="tag parameter should be train, data_preprocessing or streaming.")
+        raise HTTPException(status_code=400, detail="tag parameter should be train, data_preprocessing, generic or streaming.")
 
     pipelines_url = os.getenv('BASE_URL') + f'/api/pipelines?api_key={os.getenv("API_KEY")}' if not tag else os.getenv('BASE_URL') + f'/api/pipelines?tag[]={tag}&api_key={os.getenv("API_KEY")}'
 
