@@ -137,9 +137,11 @@ block_typer = block_type_prompt | structured_llm_typer
 
 
 def block_type(state):
+    print("from block type:")
+    print(state)
     print("---BLOCK TYPE---")
     question = state["question"]
-
+    print(question)
     bl_type = block_typer.invoke({"question": question})
 
     if bl_type:
