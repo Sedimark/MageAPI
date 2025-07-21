@@ -2,7 +2,7 @@ import re
 import ast
 import pickle
 from typing import Optional, List
-
+import pdb
 
 def is_picklable(obj):
     try:
@@ -203,7 +203,19 @@ if args.filename:
 
 
 def remove_imports_with_word(code_string: str, word: str, block_name: str, previous_block_name: str) -> (str, list[str], str):
-    tree = ast.parse(code_string)
+    # global run_count
+    # if not hasattr(remove_imports_with_word, 'run_count'):
+    #     remove_imports_with_word.run_count = 0
+    # remove_imports_with_word.run_count += 1
+    print(f"Processing block: {block_name}")
+    print(f"Code before transformation:\n{code_string}")
+    print("-" * 50)
+    try:
+        tree = ast.parse(code_string)
+    except SyntaxError as e:
+        print(f"Syntax error in code:\n{code_string}")
+        print(f"Error details: {e}")
+        raise
     transformer = MageToPythonTransformer(word, ["data_loader", "transformer", "data_exporter", "sensor", "custom"],
                                           block_name=block_name, previous_block_name=previous_block_name)
     cleaned_tree = transformer.visit(tree)
@@ -246,13 +258,26 @@ def remove_imports_with_word(code_string: str, word: str, block_name: str, previ
 
 
 def replace_code_patterns(code_str, repo_name: str):
+    
+    print(code_str)
     env_vars = []
     kwargs_pattern = r'kwargs\.get\(([^)]+)\)'
 
     def kwargs_replacement(match):
-        var_name = match.group(1).strip("'\"")
+        # Split only on the first comma since kwargs.get() only uses two parameters
+        args = match.group(1).split(',', 1)
+        
+        # Get the variable name (first parameter)
+        var_name = args[0].strip("'\"")
         upper_var_name = var_name.upper()
         env_vars.append(upper_var_name)
+        
+        # If there's a default value (second parameter), include it
+        if len(args) > 1:
+            default_value = args[1].strip()
+            return f"os.getenv('{upper_var_name}', {default_value})"
+        
+        # If no default value, just return simple os.getenv
         return f"os.getenv('{upper_var_name}')"
 
     modified_code_str = re.sub(kwargs_pattern, kwargs_replacement, code_str)
