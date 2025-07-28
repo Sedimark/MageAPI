@@ -373,7 +373,7 @@ async def pipeline_create_trigger(trigger: Trigger):
     if trigger.trigger_type == "api":
         payload = json.dumps({
             "pipeline_schedule": {
-                "name": ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10)),
+                "name": trigger.trigger_name if trigger.trigger_name is not None else ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10)),
                 "schedule_type": trigger.trigger_type,
                 "status": "active"
             },
@@ -382,7 +382,7 @@ async def pipeline_create_trigger(trigger: Trigger):
     else:
         payload = json.dumps({
             "pipeline_schedule": {
-                "name": ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10)),
+                "name": trigger.trigger_name if trigger.trigger_name is not None else ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10)),
                 "schedule_type": trigger.trigger_type,
                 "schedule_interval": "null" if trigger.interval is None else f"@{trigger.interval}",
                 "start_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S%z') if trigger.start_time is None else trigger.start_time.strftime('%Y-%m-%d %H:%M:%S%z')

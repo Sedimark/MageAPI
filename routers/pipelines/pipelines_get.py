@@ -65,9 +65,10 @@ async def pipeline_templates(template_type: str):
     
 
 @router.get("/mage/pipeline/triggers", tags=["PIPELINES GET"])
-async def pipeline_triggers(name: str):
+async def pipeline_triggers(name: str, trigger_name: str):
     if token.check_token_expired():
         token.update_token()
+
     if token.token == "":
         raise HTTPException(status_code=500, detail="Could not get the token!")
 
@@ -82,15 +83,20 @@ async def pipeline_triggers(name: str):
     if response.status_code != 200 or response.json().get("error") is not None:
         raise HTTPException(status_code=500, detail=response.json().get("error")["exception"])
 
-    if not response.json().get("pipeline_schedules"):
+    schedules = response.json().get("pipeline_schedules")
+    if not schedules:
           return JSONResponse(status_code=200, content={})
-    
-    returns = {
-        "id": response.json()["pipeline_schedules"][0]["id"],
-        "token": response.json()["pipeline_schedules"][0]["token"]
-    }
 
-    return JSONResponse(status_code=200, content=returns)
+    for schedule in schedules:
+        if name.lower() == schedule.get("name", "").lower():
+            returns = {
+                "id": schedule.get("id", ""),
+                "token": schedule.get("token", ""),
+            }
+
+            return JSONResponse(status_code=200, content=returns)
+
+    return JSONResponse(status_code=404, content="Trigger not found.")
 
 
 @router.get("/mage/pipeline/status/streaming", tags=["PIPELINES GET"])
