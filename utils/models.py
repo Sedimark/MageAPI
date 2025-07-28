@@ -36,6 +36,7 @@ class DeleteBlock(BaseModel):
 class Trigger(BaseModel):
     name: str
     trigger_type: str
+    trigger_name: Optional[str] = None
     interval: Optional[str] = None
     start_time: Optional[datetime.datetime] = None
 
