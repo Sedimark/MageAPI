@@ -88,7 +88,7 @@ async def pipeline_triggers(name: str, trigger_name: str):
           return JSONResponse(status_code=200, content={})
 
     for schedule in schedules:
-        if name.lower() == schedule.get("name", "").lower():
+        if trigger_name.lower() == schedule.get("name", "").lower():
             returns = {
                 "id": schedule.get("id", ""),
                 "token": schedule.get("token", ""),
