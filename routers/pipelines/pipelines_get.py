@@ -155,7 +155,7 @@ async def pipelines(tag: Optional[str] = None):
     if token.token == "":
         raise HTTPException(status_code=500, detail="Could not get the token!")
 
-    valid_tags = ["train", "data_preprocessing", "streaming" , "generic"]
+    valid_tags = ["train", "data_preprocessing", "streaming" , "generic", "data_manipulation"]
 
     if tag and tag not in valid_tags:
         raise HTTPException(status_code=400, detail="tag parameter should be train, data_preprocessing, generic or streaming.")
