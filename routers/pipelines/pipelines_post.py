@@ -475,7 +475,16 @@ async def create_variables(variables: Variables):
 
 @router.post("/mage/pipeline/import", tags=["PIPELINES POST"])
 async def import_pipeline(file: UploadFile):
-    if file.content_type != "application/zip":
+    print(f"Received file content_type: {file.content_type}") 
+    # we define here multiple MIME types that are related to the zip file format
+    # because a webb app may send various MIME types and this can raise an issue
+    
+    accepted_zip_mimes = [
+        "application/zip",
+        "application/x-zip-compressed",
+    ]
+    
+    if file.content_type not in accepted_zip_mimes:
         raise HTTPException(status_code=500, detail="Only zip files are allowed!")
     
     if token.check_token_expired():
