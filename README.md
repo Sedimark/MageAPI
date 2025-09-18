@@ -1,109 +1,113 @@
-# Mage AI API
+# 🧙‍♂️ Mage AI API
+
 ![Docker Image](https://github.com/JarcauCristian/MageAPI/actions/workflows/docker_image.yml/badge.svg)
 
-Mage AI API tries to automate most of the things that can be done in Mage AI through the power of code.
+> **Automate Mage AI workflows through the power of code** ✨
 
-## API Categories
-The API is split into four main categories:
-- **Pipeline Interactions**
-- **Block Interactions**
-- **Kernel Interactions**
-- **File Interactions**
+Mage AI API provides a comprehensive REST API interface that automates most operations available in Mage AI, enabling seamless integration and programmatic control of your data pipelines.
 
-## Running the API
+---
 
-### Locally
-1. Clone the repository
-2. Install the requirements:
-   ```sh
-   pip install -r requirements.txt
-   ```
-3. Run the application:
-   ```sh
-   python main.py
-   ```
+## 🚀 Features
 
-### Docker
-1. Get the official image:
-   ```sh
+- **Pipeline Management** - Create, read, update, and delete pipelines
+- **Block Operations** - Manage data blocks and transformations  
+- **File Handling** - Upload, download, and manage project files
+- **Real-time Monitoring** - WebSocket support for live pipeline status
+- **Export Capabilities** - Export pipelines in multiple formats (including CWL)
+- **RAG Integration** - AI-powered assistance for your workflows
+- **Docker Ready** - Containerized deployment with official images
+
+---
+
+## 🏃‍♂️ Quick Start
+
+### Using Docker (Recommended)
+
+1. **Pull the official image:**
+   ```bash
    docker pull ghcr.io/sedimark/mageapi/mage-api:latest
    ```
 
-2. Set the environment variables:
-   - **BASE_URL**: The URL to the Mage AI deployment
-   - **EMAIL**: The email of an account with admin role
-   - **PASSWORD**: The password of an account with admin role
-   - **AUTH**: Can have only two values **[true, false]**; if it is false then EMAIL and PASSWORD shouldn't be provided
-   - **OLLAMA_URL**: The URL for an OLLAMA instance
-   - **OLLAMA_MODEL**: The model to use 
-
-3. Run the image:
-   ```sh
-   docker run -p 8000:8000 -e BASE_URL=<> -e EMAIL=<> -e PASSWORD=<> -e AUTH=<> -e OLLAMA_URL=<> -e OLLAMA_MODEL=<> ghcr.io/sedimark/mageapi/mage-api:development
+2. **Configure environment variables:**
+   ```bash
+   export BASE_URL="<your-mage-ai-url>"
+   export EMAIL="<admin-email>"
+   export PASSWORD="<admin-password>"
+   export AUTH="true"  # or "false" for no auth
+   export OLLAMA_URL="<ollama-instance-url>"
+   export OLLAMA_MODEL="<model-name>"
    ```
 
-## Accessing the API Documentation
-Access the API Swagger documentation at:
-- [http://localhost:8000/mage/docs](http://localhost:8000/mage/docs)
-- [http://localhost:8000/mage/scalar](http://localhost:8000/mage/scalar)
+3. **Run the container:**
+   ```bash
+   docker run -p 8000:8000 \
+     -e BASE_URL=$BASE_URL \
+     -e EMAIL=$EMAIL \
+     -e PASSWORD=$PASSWORD \
+     -e AUTH=$AUTH \
+     -e OLLAMA_URL=$OLLAMA_URL \
+     -e OLLAMA_MODEL=$OLLAMA_MODEL \
+     ghcr.io/sedimark/mageapi/mage-api:latest
+   ```
 
-## API Endpoints
+### Environment Variables
 
-### Pipeline Interactions
-- **GET /mage/pipeline/templates**: Retrieve pipeline templates.
-- **GET /mage/pipeline/triggers**: Retrieve pipeline triggers.
-- **GET /mage/pipeline/status/streaming**: Retrieve streaming pipeline status.
-- **GET /mage/pipeline/status/batch**: Retrieve batch pipeline status.
-- **GET /mage/pipelines**: Retrieve a list of pipelines.
-- **GET /mage/pipelines/specific**: Retrieve specific pipelines.
-- **GET /mage/pipeline/read**: Read a specific pipeline.
-- **GET /mage/pipeline/read/full**: Read full details of a specific pipeline.
-- **GET /mage/pipeline/read/predict/full**: Read full details of a prediction pipeline.
-- **GET /mage/pipeline/history**: Retrieve pipeline history.
-- **GET /mage/pipeline/description**: Retrieve pipeline description.
-- **GET /mage/pipeline/block/templates**: Retrieve block templates.
-- **GET /mage/pipeline/export/cwl**: Export pipeline to CWL.
-- **GET /mage/pipeline/export**: Export pipeline.
-- **PUT /mage/pipeline/rename**: Rename a pipeline.
-- **PUT /mage/pipeline/trigger/status**: Change pipeline trigger status.
-- **PUT /mage/pipeline/trigger/update**: Update pipeline trigger.
-- **PUT /mage/pipeline/description**: Update pipeline description.
-- **POST /mage/pipeline/create**: Create a new pipeline.
-- **POST /mage/pipeline/create/template**: Create a pipeline from a template.
-- **POST /mage/pipeline/create/tags**: Create tags for a pipeline.
-- **POST /mage/pipeline/create/trigger**: Create a trigger for a pipeline.
-- **POST /mage/pipeline/run**: Run a pipeline.
-- **POST /mage/pipeline/variables**: Create variables for a pipeline.
-- **POST /mage/pipeline/import**: Import a pipeline.
-- **DELETE /mage/pipeline/trigger/delete/{trigger_id}**: Delete a pipeline trigger.
-- **DELETE /mage/pipeline/delete**: Delete a pipeline.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `BASE_URL` | URL to your Mage AI deployment | ✅ |
+| `EMAIL` | Admin account email | ✅ (if AUTH=true) |
+| `PASSWORD` | Admin account password | ✅ (if AUTH=true) |
+| `AUTH` | Enable authentication (`true`/`false`) | ✅ |
+| `OLLAMA_URL` | OLLAMA instance URL | ❌ |
+| `OLLAMA_MODEL` | Model name for OLLAMA | ❌ |
 
-### Block Interactions
-- **GET /mage/block/model**: Retrieve block model.
-- **GET /mage/block/read**: Read a specific block.
-- **POST /mage/block/create**: Create a new block.
-- **POST /mage/block/template/create**: Create a block template.
-- **PUT /mage/block/update**: Update a block.
-- **DELETE /mage/block/delete**: Delete a block.
+---
 
-### File Interactions
-- **GET /mage/file/download**: Download a file.
-- **GET /mage/file/download/plain**: Download a file in plain text.
-- **GET /mage/file/figures**: Retrieve figures for a pipeline.
-- **GET /mage/file/telemetry**: Retrieve telemetry data for a pipeline.
-- **POST /mage/files/create**: Create a new file or folder.
-- **DELETE /mage/files/delete**: Delete a file or folder.
+## 📚 API Documentation
 
-### Log Interactions
-- **GET /mage/log/pipeline/{pipeline_name}**: Retrieve logs for a pipeline.
-- **GET /mage/log/pipeline/{pipeline_name}/{block_name}**: Retrieve logs for a specific block.
+Once the API is running, access the interactive documentation:
 
-### WebSocket Interactions
-- **/mage/validate**: Validate a pipeline.
-- **/mage/block/generate**: Generate a block using RAG.
+### 🔗 Documentation Links
+- **Swagger UI**: [http://localhost:8000/mage/docs](http://localhost:8000/mage/docs)
+- **Scalar UI**: [http://localhost:8000/mage/scalar](http://localhost:8000/mage/scalar)
 
-### Server Interactions
-- **POST /mage/server/set**: Set server configuration.
+The documentation provides:
+- 📖 Complete endpoint reference
+- 🧪 Interactive API testing
+- 📋 Request/response examples
+- 🔧 Schema definitions
 
-### RAG Interactions
-- **POST /mage/rag/add**: Add a document to RAG.
+---
+
+## 🛠️ API Categories
+
+Our API is organized into the following categories:
+
+| Category | Description |
+|----------|-------------|
+| 🔄 **Pipeline Interactions** | Manage pipelines, templates, triggers, and execution |
+| 🧱 **Block Interactions** | Handle data blocks and transformations |
+| 📁 **File Interactions** | Upload, download, and manage project files |
+| 📊 **Log Interactions** | Access and monitor pipeline logs |
+| 🌐 **WebSocket Interactions** | Real-time pipeline status and updates |
+| 🖥️ **Server Interactions** | Server management and health checks |
+| 🤖 **RAG Interactions** | AI-powered assistance and recommendations |
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please feel free to submit issues and pull requests.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+  <strong>Happy coding! 🎉</strong>
+</div>
